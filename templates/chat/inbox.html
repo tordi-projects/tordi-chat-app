@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Tordi{% endblock %}
+{% block content %}
+<div class="app-shell">
+  <aside class="sidebar">
+    <header class="sidebar-header">
+      <div class="me">
+        <div class="avatar">
+          {% if request.user.avatar %}<img src="{{ request.user.avatar.url }}" alt="">{% else %}{{ request.user.display_name|first|upper }}{% endif %}
+        </div>
+        <span>{{ request.user.display_name }}</span>
+      </div>
+      <a href="{% url 'settings' %}" class="icon-btn" title="Settings">⚙</a>
+    </header>
+
+    <form method="get" class="search-bar">
+      <input type="text" name="q" value="{{ query }}" placeholder="Search name or phone number" class="form-input">
+    </form>
+
+    {% if search_results %}
+      <div class="results-block">
+        <p class="section-label">People</p>
+        {% for person in search_results %}
+          <a href="{% url 'start_conversation' person.id %}" class="chat-row">
+            <div class="avatar">
+              {% if person.avatar %}<img src="{{ person.avatar.url }}" alt="">{% else %}{{ person.display_name|first|upper }}{% endif %}
+            </div>
+            <div class="chat-row-info">
+              <span class="name">{{ person.display_name }}</span>
+              <span class="preview">{{ person.about }}</span>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="results-block">
+      <p class="section-label">Chats</p>
+      {% for conversation in conversations %}
+        <a href="{% url 'chat_room' conversation.id %}" class="chat-row">
+          <div class="avatar">
+            {% if conversation.other.avatar %}<img src="{{ conversation.other.avatar.url }}" alt="">{% else %}{{ conversation.other.display_name|default:"?"|first|upper }}{% endif %}
+            {% if conversation.other.is_online %}<span class="online-dot"></span>{% endif %}
+          </div>
+          <div class="chat-row-info">
+            <span class="name">{{ conversation.other.display_name|default:"Unknown" }}</span>
+            <span class="preview">{% if conversation.last %}{{ conversation.last.text|truncatechars:40 }}{% else %}Say hello 👋{% endif %}</span>
+          </div>
+        </a>
+      {% empty %}
+        {% if not search_results %}
+          <p class="empty-state">No chats yet — search a phone number above to start one.</p>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </aside>
+
+  <main class="main-empty">
+    <div class="empty-illustration">
+      <div class="brand-logo big">T</div>
+      <h2>Tordi Web</h2>
+      <p>Select a chat or search for someone to start messaging.</p>
+    </div>
+  </main>
+</div>
+{% endblock %}

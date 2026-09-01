@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Verify - Tordi{% endblock %}
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="brand-logo">T</div>
+    <h1 class="brand">Verify your number</h1>
+    <p class="subtitle">Enter the 6-digit code sent to <strong>{{ phone_number }}</strong></p>
+    <p class="hint">(Dev mode: check the server console for the code)</p>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {{ form.code }}
+      {% if form.code.errors %}<p class="field-error">{{ form.code.errors.0 }}</p>{% endif %}
+      <button type="submit" class="btn-primary">Verify</button>
+    </form>
+    <p class="switch"><a href="{% url 'register' %}">Use a different number</a></p>
+  </div>
+</div>
+{% endblock %}

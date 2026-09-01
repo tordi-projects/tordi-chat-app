@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Settings - Tordi{% endblock %}
+{% block content %}
+<div class="settings-wrapper">
+  <div class="settings-card">
+    <div class="settings-top">
+      <a href="{% url 'inbox' %}" class="icon-btn" title="Back to chats">←</a>
+      <h1 class="settings-title">Settings</h1>
+    </div>
+
+    <div class="settings-avatar-row">
+      <div class="avatar">
+        {% if request.user.avatar %}<img src="{{ request.user.avatar.url }}" alt="">{% else %}{{ request.user.display_name|first|upper }}{% endif %}
+      </div>
+      <div>
+        <div style="font-weight:700; font-size:15px;">{{ request.user.display_name }}</div>
+        <div class="phone-display">{{ request.user.phone_number }}</div>
+      </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+      <label for="{{ form.full_name.id_for_label }}">Name</label>
+      {{ form.full_name }}
+
+      <label for="{{ form.about.id_for_label }}">About</label>
+      {{ form.about }}
+
+      <div class="avatar-upload" style="margin-top:14px;">
+        <label for="{{ form.avatar.id_for_label }}">Change photo</label>
+        {{ form.avatar }}
+      </div>
+
+      <button type="submit" class="btn-primary">Save changes</button>
+    </form>
+
+    <hr class="divider">
+
+    <form method="post" action="{% url 'logout' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn-danger">Log out</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

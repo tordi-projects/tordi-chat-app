@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Set up profile - Tordi{% endblock %}
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="brand-logo">T</div>
+    <h1 class="brand">Set up your profile</h1>
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+      <label for="{{ form.full_name.id_for_label }}">Name</label>
+      {{ form.full_name }}
+      <label for="{{ form.about.id_for_label }}">About</label>
+      {{ form.about }}
+      <label for="{{ form.avatar.id_for_label }}">Photo (optional)</label>
+      {{ form.avatar }}
+      <button type="submit" class="btn-primary">Continue to Tordi</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

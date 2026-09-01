@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}{{ other.display_name|default:"Chat" }} - Tordi{% endblock %}
+{% block content %}
+<div class="app-shell has-room">
+  <main class="chat-main">
+    <header class="chat-header">
+      <a href="{% url 'inbox' %}" class="back-btn" title="Back to chats">←</a>
+      <div class="avatar">
+        {% if other.avatar %}<img src="{{ other.avatar.url }}" alt="">{% else %}{{ other.display_name|default:"?"|first|upper }}{% endif %}
+        {% if other.is_online %}<span class="online-dot"></span>{% endif %}
+      </div>
+      <div class="chat-header-info">
+        <span class="name">{{ other.display_name|default:"Unknown" }}</span>
+        <span class="status" id="peer-status">
+          {% if other.is_online %}online{% else %}last seen {{ other.last_seen|default:"a while ago" }}{% endif %}
+        </span>
+      </div>
+      <a href="{% url 'settings' %}" class="icon-btn settings-link-header" title="Settings">⚙</a>
+    </header>
+
+    <div class="message-list" id="message-list">
+      {% for message in chat_messages %}
+        <div class="bubble-row {% if message.sender_id == request.user.id %}mine{% else %}theirs{% endif %}">
+          <div class="bubble {% if message.attachment and not message.text %}media-only{% endif %}">
+            {% if message.attachment %}
+              <div class="bubble-media">
+                {% if message.attachment_kind == 'image' %}
+                  <img src="{{ message.attachment.url }}" alt="">
+                {% elif message.attachment_kind == 'video' %}
+                  <video src="{{ message.attachment.url }}" controls></video>
+                {% else %}
+                  <a href="{{ message.attachment.url }}" target="_blank">Download attachment</a>
+                {% endif %}
+              </div>
+            {% endif %}
+            {% if message.text %}<span class="bubble-text">{{ message.text }}</span>{% endif %}
+            <span class="bubble-time">{{ message.timestamp|time:"H:i" }}</span>
+          </div>
+        </div>
+      {% empty %}
+        <p class="empty-state">No messages yet. Say hello 👋</p>
+      {% endfor %}
+    </div>
+
+    <div class="typing-indicator" id="typing-indicator"></div>
+
+    <form id="message-form" class="composer" autocomplete="off" enctype="multipart/form-data">
+      {% csrf_token %}
+      <button type="button" class="composer-icon-btn" id="emoji-btn" title="Emoji">🙂</button>
+      <button type="button" class="composer-icon-btn" id="attach-btn" title="Attach photo or video">📎</button>
+      <input type="file" id="attachment-input" accept="image/*,video/*" style="display:none;">
+      <input type="text" id="message-input" class="form-input" placeholder="Type a message" autocomplete="off">
+      <button type="submit" class="btn-send" id="send-btn" title="Send">➤</button>
+
+      <div class="emoji-panel" id="emoji-panel"></div>
+    </form>
+  </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  window.TORDI_CONVERSATION_ID = "{{ conversation.id }}";
+  window.TORDI_USER_ID = "{{ request.user.id }}";
+  window.TORDI_UPLOAD_URL = "{% url 'upload_attachment' conversation.id %}";
+</script>
+<script src="/static/js/chat.js"></script>
+{% endblock %}
