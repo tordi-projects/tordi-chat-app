@@ -11,6 +11,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
+    'daphne',  # Must be first — lets `manage.py runserver` handle WebSockets automatically.
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -94,10 +95,19 @@ LOGIN_REDIRECT_URL = 'inbox'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# --- SMS / OTP gateway placeholder -----------------------------------------
-# Tordi currently prints OTP codes to the console (see accounts/views.py:
-# send_otp_sms). Plug in a real provider such as Twilio by setting these
-# and updating that function.
+# --- SMS / WhatsApp OTP gateway --------------------------------------------
+# If Twilio credentials are set (as environment variables), OTP codes are
+# sent as a real SMS or WhatsApp message. Otherwise Tordi falls back to
+# printing the code to the console, so local development still works
+# without a Twilio account. See accounts/views.py -> send_otp_sms().
 TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID', '')
 TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN', '')
+
+# For plain SMS: a Twilio phone number, e.g. "+15551234567".
 TWILIO_FROM_NUMBER = os.environ.get('TWILIO_FROM_NUMBER', '')
+
+# For WhatsApp delivery instead of SMS: set this to "true" and provide a
+# Twilio WhatsApp-enabled number (their sandbox number while testing, e.g.
+# "+14155238886"). See README.md for the full walkthrough.
+TWILIO_USE_WHATSAPP = os.environ.get('TWILIO_USE_WHATSAPP', 'false').lower() == 'true'
+TWILIO_WHATSAPP_FROM = os.environ.get('TWILIO_WHATSAPP_FROM', '')

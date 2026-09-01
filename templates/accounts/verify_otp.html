@@ -6,7 +6,7 @@
     <div class="brand-logo">T</div>
     <h1 class="brand">Verify your number</h1>
     <p class="subtitle">Enter the 6-digit code sent to <strong>{{ phone_number }}</strong></p>
-    <p class="hint">(Dev mode: check the server console for the code)</p>
+    <p class="hint">Didn't get it? Check your WhatsApp/SMS — or the server console if delivery isn't configured yet.</p>
     <form method="post" novalidate>
       {% csrf_token %}
       {{ form.code }}

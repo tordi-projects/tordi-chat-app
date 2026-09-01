@@ -62,26 +62,50 @@ Then visit `http://127.0.0.1:8000/accounts/register/`.
 Since there's no real SMS provider wired up yet, the OTP code is printed to
 your terminal — copy it into the verification screen.
 
-## Going live: connecting a real SMS provider
+## Going live: sending the OTP to a real phone (SMS or WhatsApp)
 
-Open `accounts/views.py` and look at `send_otp_sms()`. Swap the `print()`
-line for a real provider call, e.g. Twilio:
+By default Tordi prints the OTP code to your terminal — good for local
+testing, useless for real users. To send it to their actual phone, wire up
+Twilio (a few minutes, free trial available):
 
-```python
-from twilio.rest import Client
-from django.conf import settings
+1. Create a free account at https://www.twilio.com/try-twilio and verify
+   your own phone number (trial accounts can only message verified numbers
+   until you upgrade).
+2. From the Twilio Console dashboard, copy your **Account SID** and
+   **Auth Token**.
+3. Install the SDK: `pip install twilio` (already in `requirements.txt`).
+4. Choose SMS or WhatsApp:
 
-def send_otp_sms(phone_number, code):
-    client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-    client.messages.create(
-        body=f"Your Tordi verification code is {code}",
-        from_=settings.TWILIO_FROM_NUMBER,
-        to=phone_number,
-    )
-```
+   **SMS** — Twilio gives trial accounts a free phone number under
+   *Phone Numbers → Manage → Active Numbers*. Set:
+   ```bash
+   export TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   export TWILIO_AUTH_TOKEN=your_auth_token
+   export TWILIO_FROM_NUMBER=+15551234567
+   ```
 
-Set `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_FROM_NUMBER` as
-environment variables (already read in `settings.py`).
+   **WhatsApp** — Twilio's sandbox lets you test WhatsApp delivery for free.
+   Under *Messaging → Try it out → Send a WhatsApp message*, follow the
+   instructions to join the sandbox from your own WhatsApp (send the given
+   code to their sandbox number). Then set:
+   ```bash
+   export TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   export TWILIO_AUTH_TOKEN=your_auth_token
+   export TWILIO_USE_WHATSAPP=true
+   export TWILIO_WHATSAPP_FROM=+14155238886
+   ```
+   (`+14155238886` is Twilio's shared sandbox number — yours may differ,
+   check the console.) Note: with the sandbox, only numbers that joined it
+   can receive messages. Moving to a production WhatsApp sender requires
+   Meta business verification through Twilio.
+
+5. Restart the server. Registration/login will now message the real
+   number; if Twilio isn't configured or a send fails, Tordi automatically
+   falls back to printing the code to the console so you're never locked
+   out during development.
+
+No code changes are needed for either path — `accounts/views.py:send_otp_sms()`
+already handles both, controlled entirely by the environment variables above.
 
 ## Scaling past a single dev server
 

@@ -25,7 +25,12 @@ html, body { height: 100%; }
 body {
   margin: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-  background: var(--bg);
+  background:
+    radial-gradient(circle at 8% 12%, rgba(139, 123, 247, 0.35), transparent 42%),
+    radial-gradient(circle at 92% 15%, rgba(23, 195, 178, 0.30), transparent 40%),
+    radial-gradient(circle at 50% 100%, rgba(255, 141, 161, 0.22), transparent 45%),
+    linear-gradient(160deg, #2C2470 0%, #4A3FC4 40%, #6F5FF0 75%, #17C3B2 130%);
+  background-attachment: fixed;
   color: var(--text);
   -webkit-font-smoothing: antialiased;
 }
@@ -153,12 +158,22 @@ a { color: inherit; }
 .toast-error { background: var(--danger); }
 
 /* ---------- App shell ---------- */
-.app-shell { display: flex; height: 100vh; height: 100dvh; overflow: hidden; }
+.app-shell {
+  display: flex;
+  height: 100vh; height: 100dvh;
+  overflow: hidden;
+  max-width: 1440px;
+  margin: 18px auto;
+  height: calc(100vh - 36px);
+  height: calc(100dvh - 36px);
+  border-radius: 26px;
+  box-shadow: 0 30px 80px rgba(20, 10, 60, 0.35);
+}
 
 .sidebar {
   width: 380px;
   min-width: 340px;
-  background: var(--surface);
+  background: linear-gradient(180deg, #FFFFFF 0%, #FAFAFF 100%);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
@@ -225,9 +240,9 @@ a { color: inherit; }
   flex: 1;
   display: flex; align-items: center; justify-content: center;
   background:
-    radial-gradient(circle at 20% 20%, rgba(91, 79, 233, 0.06), transparent 40%),
-    radial-gradient(circle at 80% 80%, rgba(23, 195, 178, 0.06), transparent 40%),
-    var(--bg);
+    radial-gradient(circle at 20% 20%, rgba(91, 79, 233, 0.10), transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(23, 195, 178, 0.10), transparent 40%),
+    #F5F5FD;
 }
 .empty-illustration { text-align: center; color: var(--muted); }
 .empty-illustration h2 { color: var(--text); margin: 14px 0 4px; font-weight: 800; }
@@ -262,9 +277,11 @@ a { color: inherit; }
   flex-direction: column;
   gap: 8px;
   background:
-    radial-gradient(circle at 10% 0%, rgba(91, 79, 233, 0.04), transparent 35%),
-    radial-gradient(circle at 90% 100%, rgba(23, 195, 178, 0.05), transparent 35%),
-    var(--bg);
+    radial-gradient(circle at 12% 8%, rgba(91, 79, 233, 0.14), transparent 38%),
+    radial-gradient(circle at 88% 25%, rgba(23, 195, 178, 0.16), transparent 36%),
+    radial-gradient(circle at 20% 92%, rgba(255, 141, 161, 0.14), transparent 40%),
+    radial-gradient(circle at 90% 95%, rgba(139, 123, 247, 0.12), transparent 40%),
+    #F5F5FD;
 }
 
 .bubble-row { display: flex; }
@@ -372,8 +389,7 @@ a { color: inherit; }
 /* ---------- Settings page ---------- */
 .settings-wrapper {
   min-height: 100vh;
-  background: var(--bg);
-  display: flex; justify-content: center;
+  display: flex; justify-content: center; align-items: flex-start;
   padding: 40px 20px;
 }
 .settings-card {
@@ -405,6 +421,7 @@ a { color: inherit; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 860px) {
+  .app-shell { margin: 0; height: 100vh; height: 100dvh; border-radius: 0; box-shadow: none; }
   .sidebar { width: 100%; min-width: 0; }
   .app-shell.has-room .sidebar { display: none; }
   .main-empty { display: none; }

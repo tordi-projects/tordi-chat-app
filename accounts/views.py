@@ -11,20 +11,54 @@ User = get_user_model()
 
 def send_otp_sms(phone_number, code):
     """
-    Placeholder SMS gateway. Prints the code to the console so you can
-    test the flow without a paid SMS provider.
+    Sends the OTP to the person's real phone — via WhatsApp or SMS through
+    Twilio — if Twilio credentials are configured. Falls back to printing
+    the code to the console so local development works with zero setup.
 
-    To go live, wire in a real provider here, e.g. Twilio:
-
-        from twilio.rest import Client
-        from django.conf import settings
-        client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-        client.messages.create(
-            body=f"Your Tordi verification code is {code}",
-            from_=settings.TWILIO_FROM_NUMBER,
-            to=phone_number,
-        )
+    To enable real delivery, set these environment variables before
+    starting the server (see README.md for the full walkthrough):
+        TWILIO_ACCOUNT_SID
+        TWILIO_AUTH_TOKEN
+        TWILIO_FROM_NUMBER        (for SMS)
+      or
+        TWILIO_USE_WHATSAPP=true
+        TWILIO_WHATSAPP_FROM      (for WhatsApp)
     """
+    from django.conf import settings
+
+    body = f'Your Tordi verification code is {code}. It expires in 5 minutes.'
+
+    if settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN:
+        try:
+            from twilio.rest import Client
+        except ImportError:
+            print('[Tordi] Twilio credentials are set but the "twilio" package '
+                  'is not installed. Run: pip install twilio')
+            print(f'[Tordi] OTP for {phone_number}: {code}')
+            return
+
+        try:
+            client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+            if settings.TWILIO_USE_WHATSAPP:
+                client.messages.create(
+                    body=body,
+                    from_=f'whatsapp:{settings.TWILIO_WHATSAPP_FROM}',
+                    to=f'whatsapp:{phone_number}',
+                )
+            else:
+                client.messages.create(
+                    body=body,
+                    from_=settings.TWILIO_FROM_NUMBER,
+                    to=phone_number,
+                )
+            print(f'[Tordi] OTP sent to {phone_number} via '
+                  f'{"WhatsApp" if settings.TWILIO_USE_WHATSAPP else "SMS"}.')
+            return
+        except Exception as exc:
+            # Don't crash registration if the SMS/WhatsApp send fails —
+            # fall back to console so the person can still test the flow.
+            print(f'[Tordi] Twilio send failed ({exc}); printing code instead.')
+
     print(f'[Tordi] OTP for {phone_number}: {code}')
 
 
