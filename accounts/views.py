@@ -23,9 +23,20 @@ def send_otp_email(email, code):
     """
     subject = 'Your Tordi verification code'
     message = (
+        f'Verify Your Email Address'
+        f'Hello,'
+        f'Thank you for creating an account with Tordi.'
+        f'To complete your registration and secure your account, please verify your email address by copying the verification code below:'
+
         f'Your Tordi verification code is: {code}\n\n'
-        'This code expires in 10 minutes. If you did not request this, '
-        'you can safely ignore this email.'
+
+        f'This code expires in 10 minutes. If you did not request this, '
+        f'This verification helps us confirm that this email address belongs to you and enables you to access all features of Tordi.'
+        f'If you did not create an account with Tordi, please ignore this email. No further action is required.'
+        f'Thank you for joining Tordi.'
+        f'Best regards,'
+        f'The Tordi Team'
+        f'© 2026 Tordi. All rights reserved.'
     )
     send_mail(
         subject,
