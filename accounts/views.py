@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login, logout
 from django.shortcuts import redirect, render
@@ -124,7 +126,7 @@ def verify_otp_view(request):
 
                 user, _ = User.objects.get_or_create(phone_number=phone_number)
                 user.is_verified = True
-                user.is_online = True
+                user.last_seen = timezone.now()
                 user.save()
 
                 login(request, user, backend='django.contrib.auth.backends.ModelBackend')
@@ -174,8 +176,9 @@ def settings_view(request):
 
 def logout_view(request):
     if request.user.is_authenticated:
-        request.user.is_online = False
-        request.user.last_seen = timezone.now()
-        request.user.save()
+        # Push last_seen safely into the past so they read as "offline"
+        # immediately, rather than waiting out the online-activity window.
+        request.user.last_seen = timezone.now() - timedelta(seconds=request.user.ONLINE_THRESHOLD_SECONDS + 5)
+        request.user.save(update_fields=['last_seen'])
     logout(request)
     return redirect('login')

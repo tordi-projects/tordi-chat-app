@@ -49,6 +49,22 @@ class User(AbstractBaseUser, PermissionsMixin):
     def display_name(self):
         return self.full_name or self.phone_number
 
+    # How long since the last poll/heartbeat before we consider someone
+    # offline. Used instead of a toggled boolean, since there's no
+    # persistent connection (polling, not WebSockets) to know the instant
+    # someone closes the tab.
+    ONLINE_THRESHOLD_SECONDS = 20
+
+    def is_recently_active(self):
+        if not self.last_seen:
+            return False
+        return (timezone.now() - self.last_seen).total_seconds() < self.ONLINE_THRESHOLD_SECONDS
+
+    def touch(self):
+        """Call on every request that proves the user is actively using the app."""
+        self.last_seen = timezone.now()
+        self.save(update_fields=['last_seen'])
+
 
 class OTP(models.Model):
     phone_number = models.CharField(max_length=20)

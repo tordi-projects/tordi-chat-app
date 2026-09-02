@@ -1,7 +1,6 @@
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -11,13 +10,29 @@ from .models import Conversation, Message
 
 User = get_user_model()
 
+TYPING_CACHE_TIMEOUT = 3  # seconds
+
+
+def _typing_cache_key(conversation_id, user_id):
+    return f'typing:{conversation_id}:{user_id}'
+
+
+def _serialize_message(message):
+    return {
+        'id': message.id,
+        'text': message.text,
+        'sender_id': message.sender_id,
+        'timestamp': message.timestamp.strftime('%H:%M'),
+        'attachment_url': message.attachment.url if message.attachment else None,
+        'attachment_kind': message.attachment_kind(),
+    }
+
 
 @login_required
 def inbox_view(request):
+    request.user.touch()
+
     conversations = list(request.user.conversations.all().order_by('-created_at'))
-    # Precompute per-conversation display data here rather than in the
-    # template, since Django templates can't call a method with an
-    # argument (e.g. other_participant(request.user)).
     for conversation in conversations:
         conversation.other = conversation.other_participant(request.user)
         conversation.last = conversation.last_message()
@@ -52,30 +67,87 @@ def start_conversation(request, user_id):
 
 @login_required
 def chat_room_view(request, conversation_id):
-    conversation = get_object_or_404(Conversation, id=conversation_id, participants=request.user)
+    request.user.touch()
 
+    conversation = get_object_or_404(Conversation, id=conversation_id, participants=request.user)
     conversation.messages.exclude(sender=request.user).filter(is_read=False).update(is_read=True)
 
-    chat_messages = conversation.messages.select_related('sender').all()
+    chat_messages = list(conversation.messages.select_related('sender').all())
     other = conversation.other_participant(request.user)
+    last_message_id = chat_messages[-1].id if chat_messages else 0
 
     return render(request, 'chat/room.html', {
         'conversation': conversation,
         'chat_messages': chat_messages,
         'other': other,
+        'last_message_id': last_message_id,
+    })
+
+
+@login_required
+def poll_messages(request, conversation_id):
+    """
+    Polled every couple of seconds by the room page. Returns any messages
+    newer than `after`, plus whether the other participant is currently
+    typing or online. This replaces the old WebSocket push so the app
+    runs on plain WSGI hosting (e.g. PythonAnywhere) with no extra
+    services required.
+    """
+    conversation = get_object_or_404(Conversation, id=conversation_id, participants=request.user)
+    request.user.touch()
+
+    after_id = request.GET.get('after', '0')
+    try:
+        after_id = int(after_id)
+    except ValueError:
+        after_id = 0
+
+    new_messages = conversation.messages.filter(id__gt=after_id).select_related('sender')
+    new_messages.exclude(sender=request.user).filter(is_read=False).update(is_read=True)
+
+    other = conversation.other_participant(request.user)
+    other_typing = bool(other) and bool(cache.get(_typing_cache_key(conversation_id, other.id)))
+    other_online = bool(other) and other.is_recently_active()
+
+    return JsonResponse({
+        'messages': [_serialize_message(m) for m in new_messages],
+        'other_typing': other_typing,
+        'other_online': other_online,
+        'other_status': 'online' if other_online else f'last seen {other.last_seen:%b %d, %H:%M}' if other and other.last_seen else 'offline',
     })
 
 
 @login_required
 @require_POST
-def upload_attachment(request, conversation_id):
-    """
-    Handles picture/video uploads from the composer. Saves the message,
-    then broadcasts it over the same WebSocket group the room page is
-    listening on, so it appears instantly for both people — including
-    the sender, whose composer never touches the WebSocket for uploads.
-    """
+def send_message_view(request, conversation_id):
     conversation = get_object_or_404(Conversation, id=conversation_id, participants=request.user)
+    request.user.touch()
+
+    text = (request.POST.get('text') or '').strip()
+    if not text:
+        return JsonResponse({'error': 'Message cannot be empty.'}, status=400)
+
+    message = Message.objects.create(conversation=conversation, sender=request.user, text=text)
+    cache.delete(_typing_cache_key(conversation_id, request.user.id))
+
+    return JsonResponse({'status': 'ok', 'message': _serialize_message(message)})
+
+
+@login_required
+@require_POST
+def set_typing_view(request, conversation_id):
+    get_object_or_404(Conversation, id=conversation_id, participants=request.user)
+    cache.set(_typing_cache_key(conversation_id, request.user.id), True, timeout=TYPING_CACHE_TIMEOUT)
+    return JsonResponse({'status': 'ok'})
+
+
+@login_required
+@require_POST
+def upload_attachment(request, conversation_id):
+    """Handles picture/video uploads from the composer."""
+    conversation = get_object_or_404(Conversation, id=conversation_id, participants=request.user)
+    request.user.touch()
+
     uploaded_file = request.FILES.get('attachment')
     caption = (request.POST.get('caption') or '').strip()
 
@@ -93,19 +165,4 @@ def upload_attachment(request, conversation_id):
         attachment=uploaded_file,
     )
 
-    channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
-        f'chat_{conversation.id}',
-        {
-            'type': 'chat_message',
-            'message': message.text,
-            'sender_id': request.user.id,
-            'sender_name': request.user.display_name(),
-            'timestamp': message.timestamp.strftime('%H:%M'),
-            'message_id': message.id,
-            'attachment_url': message.attachment.url,
-            'attachment_kind': message.attachment_kind(),
-        }
-    )
-
-    return JsonResponse({'status': 'ok', 'message_id': message.id})
+    return JsonResponse({'status': 'ok', 'message': _serialize_message(message)})

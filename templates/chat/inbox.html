@@ -40,7 +40,7 @@
         <a href="{% url 'chat_room' conversation.id %}" class="chat-row">
           <div class="avatar">
             {% if conversation.other.avatar %}<img src="{{ conversation.other.avatar.url }}" alt="">{% else %}{{ conversation.other.display_name|default:"?"|first|upper }}{% endif %}
-            {% if conversation.other.is_online %}<span class="online-dot"></span>{% endif %}
+            {% if conversation.other.is_recently_active %}<span class="online-dot"></span>{% endif %}
           </div>
           <div class="chat-row-info">
             <span class="name">{{ conversation.other.display_name|default:"Unknown" }}</span>

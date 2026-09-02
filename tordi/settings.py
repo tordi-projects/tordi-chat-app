@@ -3,6 +3,16 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Load a local .env file if python-dotenv is installed and the file exists.
+# This lets you keep Twilio credentials (or any secret) out of settings.py
+# entirely — put them in a .env file at the project root instead, and
+# never commit that file (see .env.example).
+try:
+    from dotenv import load_dotenv
+    load_dotenv(BASE_DIR / '.env')
+except ImportError:
+    pass
+
 # SECURITY WARNING: change this before deploying to production!
 SECRET_KEY = 'django-insecure-CHANGE-ME-BEFORE-DEPLOYING'
 
@@ -11,14 +21,12 @@ DEBUG = True
 ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
-    'daphne',  # Must be first — lets `manage.py runserver` handle WebSockets automatically.
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'channels',
     'accounts',
     'chat',
 ]
@@ -52,19 +60,14 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'tordi.wsgi.application'
-ASGI_APPLICATION = 'tordi.asgi.application'
 
-# In-memory channel layer works for a single-process dev server.
-# For production (multiple workers/servers) switch to Redis:
-#   CHANNEL_LAYERS = {
-#       'default': {
-#           'BACKEND': 'channels_redis.core.RedisChannelLayer',
-#           'CONFIG': {"hosts": [('127.0.0.1', 6379)]},
-#       }
-#   }
-CHANNEL_LAYERS = {
+# Real-time-ish chat: the room page polls a JSON endpoint every couple of
+# seconds instead of using WebSockets. This is intentional — it means
+# Tordi runs on plain WSGI hosting (PythonAnywhere, most shared hosts,
+# etc.) with zero extra infrastructure. See chat/views.py: poll_messages.
+CACHES = {
     'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     }
 }
 
