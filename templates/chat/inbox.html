@@ -13,6 +13,30 @@
       <a href="{% url 'settings' %}" class="icon-btn" title="Settings">⚙</a>
     </header>
 
+    <form style="display:none;">{% csrf_token %}</form>
+
+    <div class="status-strip">
+      <a href="{% url 'my_status' %}" class="status-item">
+        <div class="status-ring {% if my_status_count %}has-status{% endif %}">
+          <div class="avatar">
+            {% if request.user.avatar %}<img src="{{ request.user.avatar.url }}" alt="">{% else %}{{ request.user.display_name|first|upper }}{% endif %}
+          </div>
+          {% if not my_status_count %}<span class="status-plus">+</span>{% endif %}
+        </div>
+        <span class="status-label">My status</span>
+      </a>
+      {% for contact in status_contacts %}
+        <a href="{% url 'view_status' contact.id %}" class="status-item">
+          <div class="status-ring {% if contact.has_unseen_status %}unseen{% else %}seen{% endif %}">
+            <div class="avatar">
+              {% if contact.avatar %}<img src="{{ contact.avatar.url }}" alt="">{% else %}{{ contact.display_name|first|upper }}{% endif %}
+            </div>
+          </div>
+          <span class="status-label">{{ contact.display_name }}</span>
+        </a>
+      {% endfor %}
+    </div>
+
     <form method="get" class="search-bar">
       <input type="text" name="q" value="{{ query }}" placeholder="Search name or phone number" class="form-input">
     </form>
@@ -21,15 +45,22 @@
       <div class="results-block">
         <p class="section-label">People</p>
         {% for person in search_results %}
-          <a href="{% url 'start_conversation' person.id %}" class="chat-row">
-            <div class="avatar">
-              {% if person.avatar %}<img src="{{ person.avatar.url }}" alt="">{% else %}{{ person.display_name|first|upper }}{% endif %}
-            </div>
-            <div class="chat-row-info">
-              <span class="name">{{ person.display_name }}</span>
-              <span class="preview">{{ person.about }}</span>
-            </div>
-          </a>
+          <div class="chat-row contact-search-row">
+            <a href="{% url 'start_conversation' person.id %}" class="chat-row-link">
+              <div class="avatar">
+                {% if person.avatar %}<img src="{{ person.avatar.url }}" alt="">{% else %}{{ person.display_name|first|upper }}{% endif %}
+              </div>
+              <div class="chat-row-info">
+                <span class="name">{{ person.display_name }}</span>
+                <span class="preview">{{ person.about }}</span>
+              </div>
+            </a>
+            {% if person.is_contact %}
+              <span class="added-badge">✓ Added</span>
+            {% else %}
+              <button type="button" class="add-contact-btn" data-url="{% url 'add_contact' person.id %}">+ Add</button>
+            {% endif %}
+          </div>
         {% endfor %}
       </div>
     {% endif %}
@@ -63,4 +94,7 @@
     </div>
   </main>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script src="/static/js/inbox.js"></script>
 {% endblock %}

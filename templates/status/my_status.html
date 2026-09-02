@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}My Status - Tordi{% endblock %}
+{% block content %}
+<div class="settings-wrapper">
+  <div class="settings-card">
+    <div class="settings-top">
+      <a href="{% url 'inbox' %}" class="icon-btn" title="Back">←</a>
+      <h1 class="settings-title">My Status</h1>
+    </div>
+
+    <form id="status-form" enctype="multipart/form-data">
+      {% csrf_token %}
+      <textarea id="status-text" class="form-input" placeholder="What's on your mind?" rows="3" style="resize:none;"></textarea>
+      <div style="display:flex; gap:8px; margin-top:10px; align-items:center;">
+        <button type="button" id="status-media-btn" class="composer-icon-btn" title="Add photo or video">📎</button>
+        <input type="file" id="status-media-input" accept="image/*,video/*" style="display:none;">
+        <button type="submit" class="btn-primary" style="margin-top:0; flex:1;">Post status</button>
+      </div>
+      <div id="status-preview"></div>
+    </form>
+
+    <hr class="divider">
+
+    <p class="section-label" style="padding:0 0 10px;">Active now — visible to your contacts for 24 hours</p>
+
+    {% for s in statuses %}
+      <div class="status-manage-row">
+        <div class="status-manage-media">
+          {% if s.media_kind == 'image' %}
+            <img src="{{ s.media.url }}" alt="">
+          {% elif s.media_kind == 'video' %}
+            <video src="{{ s.media.url }}"></video>
+          {% else %}
+            <div class="status-text-thumb" style="background:{{ s.background_color }};">{{ s.text|truncatechars:24 }}</div>
+          {% endif %}
+        </div>
+        <div class="status-manage-info">
+          <span>{{ s.created_at|date:"M j, H:i" }}</span>
+          <span class="preview">{{ s.viewer_list.count }} view{{ s.viewer_list.count|pluralize }}</span>
+        </div>
+        <button class="icon-btn delete-status-btn" data-url="{% url 'delete_status' s.id %}" title="Delete">✕</button>
+      </div>
+    {% empty %}
+      <p class="empty-state">No active status updates. Post one above — it disappears after 24 hours, and only your contacts can see it.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+  window.TORDI_CREATE_STATUS_URL = "{% url 'create_status' %}";
+</script>
+<script src="/static/js/status.js"></script>
+{% endblock %}

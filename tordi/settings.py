@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'accounts',
     'chat',
+    'status',
 ]
 
 MIDDLEWARE = [
@@ -98,19 +99,31 @@ LOGIN_REDIRECT_URL = 'inbox'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# --- SMS / WhatsApp OTP gateway --------------------------------------------
-# If Twilio credentials are set (as environment variables), OTP codes are
-# sent as a real SMS or WhatsApp message. Otherwise Tordi falls back to
-# printing the code to the console, so local development still works
-# without a Twilio account. See accounts/views.py -> send_otp_sms().
+# --- SMS / WhatsApp gateway (optional, not used by the core login flow) ---
+# Registration/login now happens by email (see below). Twilio is left wired
+# up here only in case you want to add real SMS features later (e.g.
+# verifying a linked phone number, or notification texts).
 TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID', '')
 TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN', '')
-
-# For plain SMS: a Twilio phone number, e.g. "+15551234567".
 TWILIO_FROM_NUMBER = os.environ.get('TWILIO_FROM_NUMBER', '')
-
-# For WhatsApp delivery instead of SMS: set this to "true" and provide a
-# Twilio WhatsApp-enabled number (their sandbox number while testing, e.g.
-# "+14155238886"). See README.md for the full walkthrough.
 TWILIO_USE_WHATSAPP = os.environ.get('TWILIO_USE_WHATSAPP', 'false').lower() == 'true'
 TWILIO_WHATSAPP_FROM = os.environ.get('TWILIO_WHATSAPP_FROM', '')
+
+# --- Email (used for account verification/login codes) ---------------------
+# Defaults to printing emails to the console, so registration/login work
+# out of the box in dev with zero setup. Set EMAIL_HOST_USER (and the
+# other EMAIL_* vars below) to send real email — see .env.example and the
+# README for a Gmail/SendGrid walkthrough. If EMAIL_HOST_USER is present,
+# Tordi automatically switches to the real SMTP backend.
+_default_email_backend = (
+    'django.core.mail.backends.smtp.EmailBackend'
+    if os.environ.get('EMAIL_HOST_USER')
+    else 'django.core.mail.backends.console.EmailBackend'
+)
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', _default_email_backend)
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'true').lower() == 'true'
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Tordi <no-reply@tordi.app>')

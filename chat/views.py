@@ -6,6 +6,9 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from accounts.models import Contact
+from status.utils import my_active_status_count, visible_status_owners
+
 from .models import Conversation, Message
 
 User = get_user_model()
@@ -40,14 +43,22 @@ def inbox_view(request):
     query = request.GET.get('q', '').strip()
     search_results = []
     if query:
-        search_results = User.objects.filter(
+        search_results = list(User.objects.filter(
             Q(phone_number__icontains=query) | Q(full_name__icontains=query)
-        ).exclude(id=request.user.id)[:20]
+        ).exclude(id=request.user.id)[:20])
+        contact_ids = set(
+            Contact.objects.filter(owner=request.user, contact__in=search_results)
+            .values_list('contact_id', flat=True)
+        )
+        for person in search_results:
+            person.is_contact = person.id in contact_ids
 
     return render(request, 'chat/inbox.html', {
         'conversations': conversations,
         'search_results': search_results,
         'query': query,
+        'status_contacts': visible_status_owners(request.user),
+        'my_status_count': my_active_status_count(request.user),
     })
 
 

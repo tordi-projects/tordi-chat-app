@@ -5,12 +5,12 @@
   <div class="auth-card">
     <div class="brand-logo">T</div>
     <h1 class="brand">Tordi</h1>
-    <p class="subtitle">Log in with your phone number</p>
+    <p class="subtitle">Log in with your email</p>
     <form method="post" novalidate>
       {% csrf_token %}
-      <label for="{{ form.phone_number.id_for_label }}">Phone number</label>
-      {{ form.phone_number }}
-      {% if form.phone_number.errors %}<p class="field-error">{{ form.phone_number.errors.0 }}</p>{% endif %}
+      <label for="{{ form.email.id_for_label }}">Email address</label>
+      {{ form.email }}
+      {% if form.email.errors %}<p class="field-error">{{ form.email.errors.0 }}</p>{% endif %}
       <button type="submit" class="btn-primary">Send code</button>
     </form>
     <p class="switch">New to Tordi? <a href="{% url 'register' %}">Create an account</a></p>

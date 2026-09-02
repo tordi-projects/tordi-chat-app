@@ -4,16 +4,16 @@
 <div class="auth-wrapper">
   <div class="auth-card">
     <div class="brand-logo">T</div>
-    <h1 class="brand">Verify your number</h1>
-    <p class="subtitle">Enter the 6-digit code sent to <strong>{{ phone_number }}</strong></p>
-    <p class="hint">Didn't get it? Check your WhatsApp/SMS — or the server console if delivery isn't configured yet.</p>
+    <h1 class="brand">Check your email</h1>
+    <p class="subtitle">Enter the 6-digit code sent to <strong>{{ email }}</strong></p>
+    <p class="hint">(Dev mode with no email server configured? Check the terminal running the server instead.)</p>
     <form method="post" novalidate>
       {% csrf_token %}
       {{ form.code }}
       {% if form.code.errors %}<p class="field-error">{{ form.code.errors.0 }}</p>{% endif %}
       <button type="submit" class="btn-primary">Verify</button>
     </form>
-    <p class="switch"><a href="{% url 'register' %}">Use a different number</a></p>
+    <p class="switch"><a href="{% url 'register' %}">Use a different email</a></p>
   </div>
 </div>
 {% endblock %}

@@ -14,7 +14,7 @@
       </div>
       <div>
         <div style="font-weight:700; font-size:15px;">{{ request.user.display_name }}</div>
-        <div class="phone-display">{{ request.user.phone_number }}</div>
+        <div class="phone-display">{{ request.user.email }}</div>
       </div>
     </div>
 
@@ -35,6 +35,25 @@
     </form>
 
     <hr class="divider">
+
+    <h2 style="font-size:15px; margin:0 0 4px;">Phone number</h2>
+    <p class="subtitle" style="text-align:left; margin-bottom:14px;">
+      Optional. Add it so other people can find your account by number — it's never used for login.
+    </p>
+    <form method="post" action="{% url 'update_phone' %}" novalidate>
+      {% csrf_token %}
+      {{ phone_form.phone_number }}
+      {% if phone_form.phone_number.errors %}<p class="field-error">{{ phone_form.phone_number.errors.0 }}</p>{% endif %}
+      <button type="submit" class="btn-secondary" style="margin-top:12px;">Save phone number</button>
+    </form>
+
+    <hr class="divider">
+
+    <a href="{% url 'contacts_list' %}" class="btn-secondary" style="display:block; text-align:center; text-decoration:none; box-sizing:border-box;">
+      My Contacts
+    </a>
+
+    <div style="height:12px;"></div>
 
     <form method="post" action="{% url 'logout' %}">
       {% csrf_token %}

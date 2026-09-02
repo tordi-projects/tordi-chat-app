@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}My Contacts - Tordi{% endblock %}
+{% block content %}
+<div class="settings-wrapper">
+  <div class="settings-card">
+    <div class="settings-top">
+      <a href="{% url 'settings' %}" class="icon-btn" title="Back">←</a>
+      <h1 class="settings-title">My Contacts</h1>
+    </div>
+    <p class="subtitle" style="text-align:left; margin-bottom:20px;">
+      People you've added can see your Tordi Status. Add contacts by searching for their phone number from your chat list.
+    </p>
+
+    <form style="display:none;">{% csrf_token %}</form>
+
+    {% for c in contacts %}
+      <div class="status-manage-row">
+        <div class="avatar">
+          {% if c.contact.avatar %}<img src="{{ c.contact.avatar.url }}" alt="">{% else %}{{ c.contact.display_name|first|upper }}{% endif %}
+        </div>
+        <div class="status-manage-info">
+          <span>{{ c.contact.display_name }}</span>
+          <span class="preview">{{ c.contact.phone_number|default:"No phone linked" }}</span>
+        </div>
+        <button class="icon-btn remove-contact-btn" data-url="{% url 'remove_contact' c.id %}" title="Remove">✕</button>
+      </div>
+    {% empty %}
+      <p class="empty-state">No contacts yet. Search for someone by phone number in your chat list and tap "+ Add".</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="/static/js/contacts.js"></script>
+{% endblock %}

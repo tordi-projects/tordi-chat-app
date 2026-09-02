@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}{{ owner.display_name }}'s status - Tordi{% endblock %}
+{% block content %}
+<div class="story-viewer">
+  <form style="display:none;">{% csrf_token %}</form>
+
+  <div class="story-progress-row" id="story-progress-row">
+    {% for s in statuses %}<div class="story-progress-bar"><div class="story-progress-fill"></div></div>{% endfor %}
+  </div>
+
+  <div class="story-header">
+    <div class="avatar">
+      {% if owner.avatar %}<img src="{{ owner.avatar.url }}" alt="">{% else %}{{ owner.display_name|first|upper }}{% endif %}
+    </div>
+    <div class="story-header-info">
+      <span class="name">{{ owner.display_name }}</span>
+      <span class="status" id="story-time"></span>
+    </div>
+    <a href="{% url 'inbox' %}" class="icon-btn" style="margin-left:auto;" title="Close">✕</a>
+  </div>
+
+  <div class="story-stage" id="story-stage">
+    {% for s in statuses %}
+      <div class="story-slide" data-index="{{ forloop.counter0 }}" data-time="{{ s.created_at|date:'M j, H:i' }}" data-mark-url="{% url 'mark_status_viewed' s.id %}">
+        {% if s.media_kind == 'image' %}
+          <img src="{{ s.media.url }}" alt="">
+        {% elif s.media_kind == 'video' %}
+          <video src="{{ s.media.url }}" playsinline></video>
+        {% else %}
+          <div class="story-text-card" style="background:{{ s.background_color }};">{{ s.text }}</div>
+        {% endif %}
+        {% if s.text and s.media %}<div class="story-caption">{{ s.text }}</div>{% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="story-tap-zone story-tap-prev" id="story-prev" title="Previous"></div>
+  <div class="story-tap-zone story-tap-next" id="story-next" title="Next"></div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="/static/js/story.js"></script>
+{% endblock %}
